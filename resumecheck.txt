@@ -1,0 +1,2 @@
+Delved into cloud-native technologies, boosting application agility by 35% through microservices adoption and increasing operational efficiency by 25% with dynamic management and active scheduling.
+Completed a virtual internship at Palo Alto Networks, enhancing developer experience by 40% through the implementation of containerization, improving code reuse and operations for cloud-native applications.
