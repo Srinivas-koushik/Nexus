@@ -159,26 +159,6 @@ cat .env
 
 ---
 
-## 📚 Code Improvements Made
-
-### Before (Issues):
-- ❌ API keys hardcoded in 3 files
-- ❌ 95% code duplication between `app.py` and `chatbot.py`
-- ❌ API keys stored in plaintext in `groqapi.txt`
-- ❌ No configuration management
-- ❌ No separation of concerns
-
-### After (Refactored):
-- ✅ Centralized config management (`config.py`)
-- ✅ Reusable components (`utils.py`)
-- ✅ Single source of truth for configuration
-- ✅ Secure API key handling via environment variables
-- ✅ Clean, maintainable code structure
-- ✅ Both GUI and CLI interfaces
-- ✅ Proper error handling
-
----
-
 ## 🤝 Contributing
 
 Feel free to submit issues and enhancement requests!
