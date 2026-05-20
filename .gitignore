@@ -97,6 +97,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.*.local
 .venv
 env/
 venv/
@@ -136,10 +138,10 @@ Thumbs.db
 # API Keys and sensitive data
 *.key
 *.pem
-.env.local
-.env.*.local
 secrets.json
-
-# Groq API related
-api_keys.txt
 config.local.py
+
+# Temporary text files with sensitive data
+groqapi.txt
+api_keys.txt
+*.txt.bak
