@@ -1,104 +1,105 @@
-import os
-import speech_recognition as sr
-import pyttsx3
+"""
+Nexus Chatbot - GUI Application
+Voice-enabled chatbot with Groq API integration
+"""
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import scrolledtext
+from tkinter import messagebox, scrolledtext
+from utils import audio_engine, chatbot_client
+from config import (
+    APP_TITLE, GREETING_MESSAGE, EXIT_MESSAGE, ERROR_MESSAGE,
+    CHAT_AREA_CONFIG, INPUT_BOX_CONFIG, BUTTON_CONFIG,
+    MIC_BUTTON_CONFIG, SEND_BUTTON_CONFIG
+)
 
-# Set GROQ_API_KEY environment variable for future use
-os.environ['GROQ_API_KEY'] = "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"
-api_key = os.getenv('GROQ_API_KEY')
 
-if not api_key:
-    raise ValueError("API key is missing. Set the GROQ_API_KEY environment variable.")
-
-try:
-    from groq import Groq
-except ImportError:
-    raise ImportError("The 'groq' library is not installed. Please install it using 'pip install groq'.")
-
-# Initialize recognizer and text-to-speech engine
-listener = sr.Recognizer()
-machine = pyttsx3.init()
-client = Groq(api_key=api_key)
-
-def talk(text):
-    """Convert text to speech."""
-    machine.say(text)
-    machine.runAndWait()
-
-def input_instruction():
-    """Listen for voice input and return the recognized instruction."""
-    try:
-        with sr.Microphone() as source:
-            # print("Hi! Welcome to our ChatBot")
-            # talk("Hi! Welcome to our ChatBot. How can I assist you today?")
-            print("Listening...")
-            speech = listener.listen(source)
-            instruction = listener.recognize_google(speech)
-            instruction = instruction.lower()
-            print(instruction)
-            return instruction
-    except sr.UnknownValueError:
-        return "Sorry, I did not understand that."
-    except sr.RequestError:
-        return "Could not request results; check your network connection."
-    except Exception as e:
-        return f"An error occurred: {e}"
-
-def send_message():
-    user_input = input_box.get("1.0", tk.END).strip()
-    if user_input:
-        chat_area.insert(tk.END, "You: " + user_input + "\n")
-        input_box.delete("1.0", tk.END)
-
-        # Check for exit keyword
-        if 'bye' in user_input:
-            chat_area.insert(tk.END, "ChatBot: Thanks for chatting! See you next time.\n")
-            talk("Thanks for chatting! See you next time.")
+class ChatbotGUI:
+    """Main GUI application for the voice-enabled chatbot"""
+    
+    def __init__(self, root):
+        """
+        Initialize the GUI application.
+        
+        Args:
+            root (tk.Tk): Root window
+        """
+        self.root = root
+        self.root.title(APP_TITLE)
+        self.setup_ui()
+        self.show_greeting()
+    
+    def setup_ui(self):
+        """Set up the user interface components"""
+        # Create chat display area
+        self.chat_area = scrolledtext.ScrolledText(
+            self.root,
+            **CHAT_AREA_CONFIG
+        )
+        self.chat_area.pack(padx=10, pady=10)
+        
+        # Create input text box
+        self.input_box = tk.Text(
+            self.root,
+            **INPUT_BOX_CONFIG
+        )
+        self.input_box.pack(padx=10, pady=(0, 10))
+        
+        # Create microphone button
+        self.mic_button = tk.Button(
+            self.root,
+            **MIC_BUTTON_CONFIG,
+            command=self.listen_and_display
+        )
+        self.mic_button.pack(padx=10, pady=(0, 10))
+        
+        # Create send button
+        self.send_button = tk.Button(
+            self.root,
+            **SEND_BUTTON_CONFIG,
+            command=self.send_message
+        )
+        self.send_button.pack(padx=10, pady=(0, 10))
+    
+    def show_greeting(self):
+        """Display greeting message on startup"""
+        self.chat_area.insert(tk.END, f"ChatBot: {GREETING_MESSAGE}\n")
+        audio_engine.speak(GREETING_MESSAGE)
+    
+    def send_message(self):
+        """Handle sending user message and getting chatbot response"""
+        user_input = self.input_box.get("1.0", tk.END).strip()
+        
+        if not user_input:
+            messagebox.showwarning("Input Error", "Please enter a message before sending.")
             return
+        
+        # Display user message
+        self.chat_area.insert(tk.END, f"You: {user_input}\n")
+        self.input_box.delete("1.0", tk.END)
+        
+        # Check for exit keyword
+        if 'bye' in user_input.lower():
+            self.chat_area.insert(tk.END, f"ChatBot: {EXIT_MESSAGE}\n")
+            audio_engine.speak(EXIT_MESSAGE)
+            return
+        
+        # Get and display chatbot response
+        response = chatbot_client.get_response(user_input)
+        self.chat_area.insert(tk.END, f"ChatBot: {response}\n")
+        audio_engine.speak(response)
+    
+    def listen_and_display(self):
+        """Listen for voice input and display in input box"""
+        instruction = audio_engine.listen()
+        if instruction:
+            self.input_box.insert(tk.END, instruction)
 
-        # Use Groq API for chat completion
-        try:
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "user", "content": user_input}
-                ],
-                model="llama3-8b-8192",
-            )
-            response = chat_completion.choices[0].message.content
-            chat_area.insert(tk.END, "ChatBot: " + response + "\n")
-            talk(response)
-        except Exception as e:
-            error_message = f"An error occurred: {e}"
-            chat_area.insert(tk.END, "ChatBot: " + error_message + "\n")
-            talk("Sorry, I encountered an error. Please try again.")
-    else:
-        messagebox.showwarning("Input Error", "Please enter a message before sending.")
 
-def listen_and_display():
-    instruction = input_instruction()
-    input_box.insert(tk.END, instruction)
+def main():
+    """Main application entry point"""
+    root = tk.Tk()
+    app = ChatbotGUI(root)
+    root.mainloop()
 
-# Create the main application window
-root = tk.Tk()
-root.title("Voice-Enabled Chatbot")
 
-# Create a text area for displaying the chat
-chat_area = scrolledtext.ScrolledText(root, wrap=tk.WORD, width=50, height=20, font=("Arial", 12))
-chat_area.pack(padx=10, pady=10)
-
-# Create a text box for user input
-input_box = tk.Text(root, height=3, font=("Arial", 12))
-input_box.pack(padx=10, pady=(0, 10))
-
-# Create a button to listen for voice input
-mic_button = tk.Button(root, text="🎤", font=("Arial", 20), command=listen_and_display)
-mic_button.pack(padx=10, pady=(0, 10))
-
-# Create a button to send the message
-send_button = tk.Button(root, text="Send", font=("Arial", 12), command=send_message)
-send_button.pack(padx=10, pady=(0, 10))
-
-# Run the application
-root.mainloop()
+if __name__ == "__main__":
+    main()
